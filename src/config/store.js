@@ -1,10 +1,15 @@
 export const store = {
   name: 'GAMENEST',
   url: 'https://gamenest.shop',
-  color: 0x5865f2,
+  color: 0x7b2fff,
   currency: 'EGP',
   giftUsername: 'GamenestGifts',
-  payments: 'InstaPay, Telda',
+  payments: 'InstaPay • Telda',
+  emojis: {
+    vbucks: '<:vbucks:1524439158968418394>',
+    gifts: '<:fngift:733084852726923345>',
+    crew: '<:fortnitecrew:1557811189134790666>',
+  },
   categories: {
     vbucks: {
       title: 'V-Bucks',
