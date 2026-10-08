@@ -1,7 +1,7 @@
 {
-  "name": "titanbot",
+  "name": "GameNest",
   "version": "2.1.0",
-  "description": "Modular Ultimate Community Bot by Touchpoint Support",
+  "description": "GameNest Fortnite Store Discord Bot",
   "main": "src/app.js",
   "type": "module",
   "scripts": {
