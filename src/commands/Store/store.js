@@ -30,30 +30,46 @@ export default {
 
     try {
       const pick = interaction.options.getString('category');
-      const cats = pick ? [store.categories[pick]] : Object.values(store.categories);
+      const keys = pick ? [pick] : Object.keys(store.categories);
 
       const embed = createEmbed({
-        title: `${store.name} Store`,
+        title: `${store.emojis.vbucks} ${store.name} Store`,
         description:
-          !pick || pick === 'gifts'
-            ? `Gifts username: **${store.giftUsername}**`
-            : null,
+          '**Fast & trusted Fortnite top-ups**\n' +
+          'Pick what you want below, then open a ticket to order.',
       });
+      embed.setColor(store.color);
 
-      for (const c of cats) {
+      for (const key of keys) {
+        const c = store.categories[key];
+        const emoji = store.emojis[key];
         embed.addFields({
-          name: c.title,
+          name: `${emoji} ${c.title}`,
           value: c.items
-            .map((i) => `**${i.name}** - ${i.price} ${store.currency}`)
+            .map((i) => `${emoji} **${i.name}** ➜ \`${i.price} ${store.currency}\``)
             .join('\n'),
+          inline: false,
         });
       }
 
-      embed.setFooter({ text: `Payment: ${store.payments}` });
+      if (!pick || pick === 'gifts') {
+        embed.addFields({
+          name: `${store.emojis.gifts} Gifts Account`,
+          value: `Add **${store.giftUsername}** on Fortnite to receive gifts.`,
+        });
+      }
+
+      embed.addFields({
+        name: '💳 Payment Methods',
+        value: store.payments,
+      });
+
+      embed.setFooter({ text: `${store.name} • ${store.url.replace('https://', '')}` });
+      embed.setTimestamp();
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-          .setLabel('Open Website')
+          .setLabel('Order on Website')
           .setStyle(ButtonStyle.Link)
           .setURL(store.url)
       );
