@@ -6,7 +6,6 @@ import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { botConfig } from '../../config/bot.js';
 
-const WORK_COOLDOWN = botConfig.economy?.cooldowns?.work ?? 30 * 60 * 1000;
 const MIN_WORK_AMOUNT = botConfig.economy?.workMin ?? 10;
 const MAX_WORK_AMOUNT = botConfig.economy?.workMax ?? 100;
 const LAPTOP_MULTIPLIER = 1.5;
@@ -49,28 +48,11 @@ export default {
 
             logger.debug(`[ECONOMY] Work command started for ${userId}`, { userId, guildId });
 
-            const lastWork = userData.lastWork || 0;
             const inventory = userData.inventory || {};
             const extraWorkShifts = inventory["extra_work"] || 0;
             const hasLaptop = inventory["laptop"] || 0;
 
-            let cooldownActive = now < lastWork + WORK_COOLDOWN;
             let usedConsumable = false;
-
-            if (cooldownActive) {
-                if (extraWorkShifts > 0) {
-                    inventory["extra_work"] = (inventory["extra_work"] || 0) - 1;
-                    usedConsumable = true;
-                } else {
-                    const remaining = lastWork + WORK_COOLDOWN - now;
-                    throw createError(
-                        "Work cooldown active",
-                        ErrorTypes.RATE_LIMIT,
-                        `You're working too fast! Wait **${Math.floor(remaining / 3600000)}h ${Math.floor((remaining % 3600000) / 60000)}m** before working again.`,
-                        { timeRemaining: remaining, cooldownType: 'work' }
-                    );
-                }
-            }
 
             let earned = Math.floor(Math.random() * (MAX_WORK_AMOUNT - MIN_WORK_AMOUNT + 1)) + MIN_WORK_AMOUNT;
             const job = WORK_JOBS[Math.floor(Math.random() * WORK_JOBS.length)];
@@ -82,7 +64,6 @@ export default {
             }
 
             userData.wallet = (userData.wallet || 0) + earned;
-            userData.lastWork = now;
 
             await setEconomyData(client, guildId, userId, userData);
 
@@ -109,7 +90,7 @@ export default {
                     },
                     {
                         name: "Next Work",
-                        value: `<t:${Math.floor((now + WORK_COOLDOWN) / 1000)}:R>`,
+                        value: `Available now`,
                         inline: true,
                     }
                 )
