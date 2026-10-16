@@ -4,7 +4,6 @@ import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 
-const CRIME_COOLDOWN = 60 * 60 * 1000;
 const JAIL_TIME = 2 * 60 * 60 * 1000;
 const FINE_RATE = 0.2;
 
@@ -42,7 +41,6 @@ export default {
             const now = Date.now();
 
             const userData = await getEconomyData(client, guildId, userId);
-            const lastCrime = userData.cooldowns?.crime || 0;
             const isJailed = userData.jailedUntil && userData.jailedUntil > now;
 
             if (isJailed) {
@@ -52,16 +50,6 @@ export default {
                     ErrorTypes.RATE_LIMIT,
                     `You're in jail for ${timeLeft} more minutes!`,
                     { jailTimeRemaining: userData.jailedUntil - now }
-                );
-            }
-
-            if (now < lastCrime + CRIME_COOLDOWN) {
-                const timeLeft = Math.ceil((lastCrime + CRIME_COOLDOWN - now) / (1000 * 60));
-                throw createError(
-                    "Crime cooldown active",
-                    ErrorTypes.RATE_LIMIT,
-                    `You need to wait ${timeLeft} more minutes before committing another crime.`,
-                    { remaining: lastCrime + CRIME_COOLDOWN - now, cooldownType: 'crime' }
                 );
             }
 
@@ -84,8 +72,6 @@ export default {
                 ? Math.floor(Math.random() * (crime.max - crime.min + 1)) + crime.min
                 : 0;
 
-            userData.cooldowns = userData.cooldowns || {};
-            userData.cooldowns.crime = now;
 
             if (isSuccess) {
                 userData.wallet = (userData.wallet || 0) + amountEarned;
