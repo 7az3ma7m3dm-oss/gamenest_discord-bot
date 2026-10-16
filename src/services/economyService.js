@@ -6,15 +6,6 @@ import { createError, ErrorTypes } from '../utils/errorHandler.js';
 import { wrapServiceClassMethods } from '../utils/serviceErrorBoundary.js';
 
 class EconomyService {
-
-  static DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
-  static WORK_COOLDOWN = 30 * 60 * 1000;
-  static GAMBLE_COOLDOWN = 5 * 60 * 1000;
-  static CRIME_COOLDOWN = 60 * 60 * 1000;
-  static ROB_COOLDOWN = 4 * 60 * 60 * 1000;
-  static MINE_COOLDOWN = 60 * 60 * 1000;
-  static FISH_COOLDOWN = 45 * 60 * 1000;
-  static BEG_COOLDOWN = 30 * 60 * 1000;
   
   static DAILY_AMOUNT = 1000;
   static MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
@@ -44,28 +35,10 @@ class EconomyService {
       );
     }
 
-    const now = Date.now();
-    const lastDaily = userData.lastDaily || 0;
-    const remaining = lastDaily + this.DAILY_COOLDOWN - now;
-
-    if (remaining > 0) {
-      logger.warn(`[ECONOMY_SERVICE] Daily cooldown active`, {
-        userId,
-        timeRemaining: remaining
-      });
-      throw createError(
-        "Daily cooldown active",
-        ErrorTypes.RATE_LIMIT,
-        `You need to wait before claiming daily again. Try again in **${this.formatDuration(remaining)}**.`,
-        { remaining, cooldownType: 'daily' }
-      );
-    }
-
     const earned = this.DAILY_AMOUNT;
     const nextWallet = (userData.wallet || 0) + earned;
     this.assertSafeBalance(nextWallet, { operation: 'claimDaily', userId, guildId });
     userData.wallet = nextWallet;
-    userData.lastDaily = now;
 
     try {
       await setEconomyData(client, guildId, userId, userData);
@@ -82,7 +55,7 @@ class EconomyService {
       return {
         earned,
         newWallet: userData.wallet,
-        nextClaimTime: new Date(now + this.DAILY_COOLDOWN)
+        nextClaimTime: null
       };
     } catch (error) {
       logger.error(`[ECONOMY_SERVICE] Failed to save daily claim`, error, {
@@ -388,20 +361,6 @@ class EconomyService {
     return userData;
   }
 
-  static checkCooldown(userData, action, cooldownMs) {
-    const lastActionField = `last${action.charAt(0).toUpperCase() + action.slice(1)}`;
-    const lastTime = userData[lastActionField] || 0;
-    const now = Date.now();
-    const remaining = Math.max(0, lastTime + cooldownMs - now);
-
-    return {
-      isOnCooldown: remaining > 0,
-      remaining,
-      formatted: this.formatDuration(remaining),
-      nextAvailable: new Date(lastTime + cooldownMs)
-    };
-  }
-
   static validateAmount(amount, context = {}) {
     if (!Number.isInteger(amount)) {
       throw createError(
@@ -447,10 +406,6 @@ class EconomyService {
     return `${seconds}s`;
   }
 
-  static formatCooldownDisplay(ms) {
-    const duration = this.formatDuration(ms);
-    return `**${duration}**`;
-  }
 }
 
 wrapServiceClassMethods(EconomyService, (methodName) => ({
