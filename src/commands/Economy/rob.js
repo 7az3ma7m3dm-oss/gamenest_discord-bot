@@ -5,7 +5,6 @@ import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHan
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { BotConfig } from '../../config/bot.js';
 
-const ROB_COOLDOWN = BotConfig.economy?.cooldowns?.rob ?? 4 * 60 * 60 * 1000;
 const BASE_ROB_SUCCESS_CHANCE = BotConfig.economy?.robSuccessRate ?? 0.4;
 const ROB_PERCENTAGE = 0.15;
 const FINE_PERCENTAGE = 0.1;
@@ -60,21 +59,6 @@ export default {
                 );
             }
             
-            const lastRob = robberData.lastRob || 0;
-
-            if (now < lastRob + ROB_COOLDOWN) {
-                const remaining = lastRob + ROB_COOLDOWN - now;
-                const hours = Math.floor(remaining / (1000 * 60 * 60));
-                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-
-                throw createError(
-                    "Robbery cooldown active",
-                    ErrorTypes.RATE_LIMIT,
-                    `You need to lay low. Wait **${hours}h ${minutes}m** before attempting another robbery.`,
-                    { remaining, hours, minutes, cooldownType: 'rob' }
-                );
-            }
-
             if (victimData.wallet < 500) {
                 throw createError(
                     "Victim too poor",
