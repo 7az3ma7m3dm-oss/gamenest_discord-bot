@@ -5,7 +5,6 @@ import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHan
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 
 // ---------- Settings (change these freely) ----------
-const COOLDOWN_MS = 10 * 1000;   // time between spins per user
 const MAX_BET = 1_000_000;       // biggest allowed bet
 const SPIN_FRAMES = 4;           // how many animation frames
 const FRAME_DELAY_MS = 900;      // delay between frames
@@ -86,7 +85,6 @@ export default {
     const amount = interaction.options.getInteger('amount');
     const betKey = interaction.options.getString('bet');
     const pick = interaction.options.getInteger('number');
-    const now = Date.now();
 
     if (betKey === 'number' && pick === null) {
       throw createError(
@@ -103,16 +101,6 @@ export default {
 
     const userData = await getEconomyData(client, guildId, userId);
 
-    const lastSpin = userData.lastRoulette || 0;
-    if (now < lastSpin + COOLDOWN_MS) {
-      const seconds = Math.ceil((lastSpin + COOLDOWN_MS - now) / 1000);
-      throw createError(
-        'Roulette cooldown active',
-        ErrorTypes.RATE_LIMIT,
-        `The wheel is still spinning down. Wait **${seconds}s**.`,
-        { remaining: seconds, cooldownType: 'roulette' },
-      );
-    }
 
     if ((userData.wallet || 0) < amount) {
       throw createError(
@@ -125,7 +113,6 @@ export default {
 
     // Take the bet up front so the cash can't be spent elsewhere mid-spin
     userData.wallet -= amount;
-    userData.lastRoulette = now;
     await setEconomyData(client, guildId, userId, userData);
 
     const author = { name: interaction.user.username, iconURL: interaction.user.displayAvatarURL() };
