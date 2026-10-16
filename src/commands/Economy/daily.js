@@ -2,13 +2,11 @@ import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, errorEmbed, successEmbed, infoEmbed, warningEmbed } from '../../utils/embeds.js';
 import { getEconomyData, setEconomyData } from '../../utils/economy.js';
 import { getGuildConfig } from '../../services/config/guildConfig.js';
-import { formatDuration } from '../../utils/embeds.js';
 import { withErrorHandling, createError, ErrorTypes } from '../../utils/errorHandler.js';
 import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { botConfig } from '../../config/bot.js';
 
-const DAILY_COOLDOWN = 24 * 60 * 60 * 1000;
 const DAILY_AMOUNT = botConfig.economy?.dailyAmount ?? 100;
 const PREMIUM_BONUS_PERCENTAGE = 0.1;
 
@@ -38,18 +36,6 @@ export default {
                 );
             }
             
-            const lastDaily = userData.lastDaily || 0;
-
-            if (now < lastDaily + DAILY_COOLDOWN) {
-                const timeRemaining = lastDaily + DAILY_COOLDOWN - now;
-                throw createError(
-                    "Daily cooldown active",
-                    ErrorTypes.RATE_LIMIT,
-                    `You need to wait before claiming daily again. Try again in **${formatDuration(timeRemaining)}**.`,
-                    { timeRemaining, cooldownType: 'daily' }
-                );
-            }
-
             const guildConfig = await getGuildConfig(client, guildId);
             const PREMIUM_ROLE_ID = guildConfig.premiumRoleId;
 
@@ -71,7 +57,6 @@ export default {
             }
 
             userData.wallet = (userData.wallet || 0) + earned;
-            userData.lastDaily = now;
 
             await setEconomyData(client, guildId, userId, userData);
 
@@ -94,9 +79,7 @@ export default {
                     inline: true,
                 })
                 .setFooter({
-                    text: hasPremiumRole
-                        ? `Next claim in 24 hours. (Premium Active)`
-                        : `Next claim in 24 hours.`,
+                    text: hasPremiumRole ? `Premium Active` : `Daily reward`,
                 });
 
             await InteractionHelper.safeEditReply(interaction, { embeds: [embed] });
